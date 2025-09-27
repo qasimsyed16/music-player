@@ -8,7 +8,7 @@ A modern, cross-platform web-based music player that works on **all platforms** 
 
 ## 🎬 Quick Demo
 
-1. **Clone & Run**: `git clone [repo] && cd universal-music-player && python3 server.py`
+1. **Clone & Run**: `git clone [https://github.com/qasimsyed16/music-player] && cd music-player && python3 server.py`
 2. **Open Browser**: http://localhost:8000
 3. **Add Music**: Drop files in `./music` folder
 4. **Enjoy**: Full-featured music player with playlists, themes, and PWA support!
@@ -30,8 +30,8 @@ A modern, cross-platform web-based music player that works on **all platforms** 
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/universal-music-player.git
-cd universal-music-player
+git clone https://github.com/qasimsyed16/music-player.git
+cd music-player
 ```
 
 ### 2. Install Dependencies
@@ -115,7 +115,6 @@ python3 server.py --help
 ## 📱 Progressive Web App
 
 - Install as native app: "Add to Home Screen" in browser
-- Works offline with cached music
 - Media controls integration
 
 ## 🛠️ Troubleshooting
