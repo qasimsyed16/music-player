@@ -8,7 +8,7 @@ A modern, cross-platform web-based music player that works on **all platforms** 
 
 ## 🎬 Quick Demo
 
-1. **Clone & Run**: `git clone [https://github.com/qasimsyed16/music-player] && cd music-player && python3 server.py`
+1. **Clone & Run**: `git clone [https://github.com/qasimsyed16/music-player.git && cd music-player && python3 server.py`
 2. **Open Browser**: http://localhost:8000
 3. **Add Music**: Drop files in `./music` folder
 4. **Enjoy**: Full-featured music player with playlists, themes, and PWA support!
