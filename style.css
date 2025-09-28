@@ -1304,33 +1304,41 @@
             background: var(--text-secondary);
         }
 
-/* Auto-scrolling text for long titles */
-.scrolling-text {
-    white-space: nowrap;
-    overflow: hidden;
+/* Continuous marquee for long titles (no ellipsis, hides left, reveals right) */
+.player-title.marquee,
+.player-artist.marquee,
+.mini-player-title.marquee,
+.mini-player-artist.marquee {
+    text-overflow: clip; /* override ellipsis when marquee is active */
+}
+
+.marquee {
     position: relative;
+    overflow: hidden; /* hides left side as text scrolls */
+    white-space: nowrap;
+    /* fade edges for nicer reveal/hide */
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
 }
 
-.scrolling-text.animate {
-    animation: scroll-text 8s linear infinite;
+.marquee__track {
+    display: inline-flex;
+    align-items: center;
+    gap: 2rem; /* space between copies */
+    will-change: transform;
+    animation: marquee-slide 14s linear infinite;
 }
 
-@keyframes scroll-text {
-    0% {
-        transform: translateX(0);
-    }
-    25% {
-        transform: translateX(0);
-    }
-    75% {
-        transform: translateX(calc(-100% + 100px));
-    }
-    100% {
-        transform: translateX(calc(-100% + 100px));
-    }
+.marquee__track > span {
+    display: inline-block;
 }
 
-/* Pause animation on hover */
-.scrolling-text.animate:hover {
-    animation-play-state: paused;
+@keyframes marquee-slide {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); } /* with two equal spans, -50% = one full text width */
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .marquee__track { animation: none; }
 }

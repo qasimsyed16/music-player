@@ -1386,18 +1386,47 @@ updateVolumeIcon(volume) {
     volumeBtn.innerHTML = iconSVG;
 }
 /**
- * Setup auto-scrolling for long text
+ * Setup continuous marquee for long text (hides left, reveals right)
  */
 setupTextScrolling(element) {
-    // Remove existing animation
-    element.classList.remove('animate');
-    
-    // Check if text overflows
-    if (element.scrollWidth > element.clientWidth) {
-        element.classList.add('scrolling-text', 'animate');
+    if (!element) return;
+
+    // If we previously wrapped this element, unwrap it back to plain text first
+    const existingTrack = element.querySelector('.marquee__track');
+    if (existingTrack) {
+        const firstSpan = existingTrack.querySelector('span');
+        const originalText = firstSpan ? firstSpan.textContent : existingTrack.textContent;
+        element.innerHTML = '';
+        element.textContent = originalText || '';
+    }
+
+    // Remove legacy classes
+    element.classList.remove('scrolling-text', 'animate');
+
+    // Determine if text overflows
+    const needsMarquee = element.scrollWidth > element.clientWidth;
+
+    if (needsMarquee) {
+        const text = element.textContent;
+        element.classList.add('marquee');
+        element.innerHTML = '';
+
+        // Build marquee track with duplicated content for seamless loop
+        const track = document.createElement('div');
+        track.className = 'marquee__track';
+
+        const span1 = document.createElement('span');
+        span1.textContent = text;
+        const span2 = document.createElement('span');
+        span2.textContent = text;
+        span2.setAttribute('aria-hidden', 'true');
+
+        track.appendChild(span1);
+        track.appendChild(span2);
+        element.appendChild(track);
     } else {
-        element.classList.add('scrolling-text');
-        element.classList.remove('animate');
+        // Ensure plain text with no marquee
+        element.classList.remove('marquee');
     }
 }
 }
