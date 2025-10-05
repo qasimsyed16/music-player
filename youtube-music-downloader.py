@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+"""
+YouTube Music Downloader
+A script to download audio files from YouTube videos with embedded metadata and album art.
+"""
+
+import os
+import sys
+import argparse
+import re
+from pathlib import Path
+from typing import List, Optional
+import yt_dlp
+from colorama import init, Fore, Style
+from tqdm import tqdm
+import time
+
+# Initialize colorama for cross-platform colored output
+init(autoreset=True)
+
+class YouTubeMusicDownloader:
+    def __init__(self, download_dir: str = "./music"):
+        self.download_dir = Path(download_dir)
+        self.download_dir.mkdir(exist_ok=True)
+        self.current_progress = None
+        
+    def validate_youtube_url(self, url: str) -> bool:
+        """Check if the URL is a valid YouTube link."""
+        youtube_regex = re.compile(
+            r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/'
+            r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
+        )
+        return youtube_regex.match(url) is not None
+    
+    def progress_hook(self, d):
+        """Hook function for yt-dlp progress updates."""
+        if d['status'] == 'downloading':
+            total = d.get('total_bytes') or d.get('total_bytes_estimate', 0)
+            downloaded = d.get('downloaded_bytes', 0)
+            
+            if total > 0:
+                if self.current_progress is None:
+                    self.current_progress = tqdm(
+                        total=total,
+                        unit='B',
+                        unit_scale=True,
+                        desc="Downloading",
+                        bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]'
+                    )
+                
+                if self.current_progress:
+                    self.current_progress.update(downloaded - self.current_progress.n)
+                    
+        elif d['status'] == 'finished':
+            if self.current_progress:
+                self.current_progress.close()
+                self.current_progress = None
+            print(f"{Fore.GREEN}✓ Download completed, processing audio...{Style.RESET_ALL}")
+    
+    def get_video_info(self, url: str) -> Optional[dict]:
+        """Fetch video information without downloading."""
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': False,
+        }
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                return {
+                    'title': info.get('title', 'Unknown'),
+                    'channel': info.get('channel', info.get('uploader', 'Unknown Artist')),
+                    'thumbnail': info.get('thumbnail'),
+                    'duration': info.get('duration', 0)
+                }
+        except Exception as e:
+            print(f"{Fore.RED}✗ Error fetching video info: {str(e)}{Style.RESET_ALL}")
+            return None
+    
+    def download_audio(self, url: str) -> bool:
+        """Download audio from YouTube video with metadata and thumbnail."""
+        # Configure yt-dlp options
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [
+                {
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '320',
+                },
+                {
+                    'key': 'FFmpegMetadata',
+                    'add_metadata': True,
+                },
+                {
+                    'key': 'EmbedThumbnail',
+                }
+            ],
+            'outtmpl': str(self.download_dir / '%(title)s.%(ext)s'),
+            'quiet': True,
+            'no_warnings': True,
+            'progress_hooks': [self.progress_hook],
+            'writethumbnail': True,
+            'embedthumbnail': True,
+            'add_metadata': True,
+            'postprocessor_args': [
+                '-metadata', 'artist=%(channel)s',
+                '-metadata', 'album=YouTube',
+            ],
+        }
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+            return True
+        except Exception as e:
+            print(f"{Fore.RED}✗ Download failed: {str(e)}{Style.RESET_ALL}")
+            return False
+    
+    def process_single_url(self, url: str, index: Optional[int] = None, total: Optional[int] = None) -> bool:
+        """Process a single YouTube URL."""
+        # Display progress if processing multiple URLs
+        if index is not None and total is not None:
+            print(f"\n{Fore.CYAN}[{index}/{total}] Processing URL {index} of {total}{Style.RESET_ALL}")
+        
+        # Validate URL
+        if not self.validate_youtube_url(url):
+            print(f"{Fore.YELLOW}⚠ Skipping: Not a valid YouTube URL - {url}{Style.RESET_ALL}")
+            return False
+        
+        print(f"{Fore.BLUE}🔗 URL: {url}{Style.RESET_ALL}")
+        
+        # Get video info
+        print(f"{Fore.CYAN}ℹ Fetching video information...{Style.RESET_ALL}")
+        video_info = self.get_video_info(url)
+        
+        if not video_info:
+            return False
+        
+        # Display video info
+        print(f"{Fore.GREEN}📹 Title: {video_info['title']}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}🎤 Artist: {video_info['channel']}{Style.RESET_ALL}")
+        
+        duration_min = video_info['duration'] // 60
+        duration_sec = video_info['duration'] % 60
+        print(f"{Fore.GREEN}⏱ Duration: {duration_min}:{duration_sec:02d}{Style.RESET_ALL}")
+        
+        # Download audio
+        print(f"{Fore.CYAN}⬇ Starting download...{Style.RESET_ALL}")
+        success = self.download_audio(url)
+        
+        if success:
+            print(f"{Fore.GREEN}✅ Successfully downloaded: {video_info['title']}{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.RED}❌ Failed to download: {video_info['title']}{Style.RESET_ALL}")
+        
+        return success
+    
+    def process_urls(self, urls: List[str]) -> dict:
+        """Process a list of URLs."""
+        results = {
+            'success': [],
+            'failed': [],
+            'skipped': []
+        }
+        
+        total = len(urls)
+        
+        for i, url in enumerate(urls, 1):
+            url = url.strip()
+            if not url:
+                continue
+            
+            if self.process_single_url(url, i, total):
+                results['success'].append(url)
+            elif self.validate_youtube_url(url):
+                results['failed'].append(url)
+            else:
+                results['skipped'].append(url)
+            
+            # Small delay between downloads to be respectful
+            if i < total:
+                time.sleep(1)
+        
+        return results
+
+def print_banner():
+    """Print a nice banner for the application."""
+    banner = f"""
+{Fore.CYAN}╔══════════════════════════════════════════╗
+║     🎵 YouTube Music Downloader 🎵       ║
+╚══════════════════════════════════════════╝{Style.RESET_ALL}
+"""
+    print(banner)
+
+def print_summary(results: dict):
+    """Print a summary of the download results."""
+    print(f"\n{Fore.CYAN}{'='*44}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}📊 Download Summary:{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}{'='*44}{Style.RESET_ALL}")
+    
+    total = len(results['success']) + len(results['failed']) + len(results['skipped'])
+    
+    print(f"{Fore.GREEN}✅ Successful: {len(results['success'])}/{total}{Style.RESET_ALL}")
+    print(f"{Fore.RED}❌ Failed: {len(results['failed'])}/{total}{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}⚠ Skipped (invalid URLs): {len(results['skipped'])}/{total}{Style.RESET_ALL}")
+    
+    if results['failed']:
+        print(f"\n{Fore.RED}Failed URLs:{Style.RESET_ALL}")
+        for url in results['failed']:
+            print(f"  • {url}")
+    
+    if results['skipped']:
+        print(f"\n{Fore.YELLOW}Skipped URLs (not YouTube):{Style.RESET_ALL}")
+        for url in results['skipped']:
+            print(f"  • {url}")
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Download music from YouTube with metadata and album art',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s https://youtube.com/watch?v=VIDEO_ID
+  %(prog)s urls.txt
+  %(prog)s urls.txt --download-directory ~/Music/YouTube
+        """
+    )
+    
+    parser.add_argument(
+        'input',
+        nargs='?',  # Make input optional
+        help='YouTube URL or path to file containing URLs (one per line)'
+    )
+    
+    parser.add_argument(
+        '--download-directory', '-d',
+        default='./music',
+        help='Directory to save downloaded files (default: ./music)'
+    )
+    
+    args = parser.parse_args()
+    
+    # Show help if no input provided
+    if not args.input:
+        parser.print_help()
+        sys.exit(0)
+    
+    print_banner()
+    
+    # Initialize downloader
+    downloader = YouTubeMusicDownloader(args.download_directory)
+    print(f"{Fore.GREEN}📁 Download directory: {downloader.download_dir.absolute()}{Style.RESET_ALL}\n")
+    
+    # Determine if input is a file or URL
+    if os.path.isfile(args.input):
+        # Read URLs from file
+        print(f"{Fore.CYAN}📄 Reading URLs from file: {args.input}{Style.RESET_ALL}")
+        try:
+            with open(args.input, 'r') as f:
+                urls = [line.strip() for line in f if line.strip()]
+            
+            if not urls:
+                print(f"{Fore.RED}✗ No URLs found in file{Style.RESET_ALL}")
+                sys.exit(1)
+            
+            print(f"{Fore.GREEN}📝 Found {len(urls)} URL(s) to process{Style.RESET_ALL}")
+            results = downloader.process_urls(urls)
+            print_summary(results)
+            
+        except Exception as e:
+            print(f"{Fore.RED}✗ Error reading file: {str(e)}{Style.RESET_ALL}")
+            sys.exit(1)
+    else:
+        # Process single URL
+        success = downloader.process_single_url(args.input)
+        if not success:
+            sys.exit(1)
+    
+    print(f"\n{Fore.GREEN}✨ All done!{Style.RESET_ALL}")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print(f"\n{Fore.YELLOW}⚠ Download cancelled by user{Style.RESET_ALL}")
+        sys.exit(0)
+    except Exception as e:
+        print(f"{Fore.RED}✗ Unexpected error: {str(e)}{Style.RESET_ALL}")
+        sys.exit(1)
