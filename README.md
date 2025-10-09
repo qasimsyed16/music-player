@@ -127,34 +127,12 @@ python3 server.py --help
 | Permission denied | Check directory permissions |
 
 
-# YouTube Music Downloader
+### YouTube Import Helper (optional tool)
 
-A Python script to download audio from YouTube videos as MP3 files with embedded metadata and album art.
+This repository includes an optional Python utility, `yt-helper.py`, which uses `yt-dlp` to fetch and prepare audio files for local playback in the web player.
 
-## Features
+> **Note:** This script is intended for personal or educational use — please ensure you comply with YouTube’s Terms of Service when using it.
 
-- Downloads high-quality audio (320kbps MP3)
-- Embeds thumbnail as album art
-- Adds metadata (channel name as artist)
-- Batch download from file containing URLs
-- Progress bars with download speed and ETA
-- Colored terminal output
-
-## Installation
-```bash
-pip install yt-dlp colorama tqdm
-Note: Requires ffmpeg installed on your system.
-Usage
-# Download single video
-python youtube_downloader.py "https://www.youtube.com/watch?v=VIDEO_ID"
-
-# Download multiple videos from file
-python youtube_downloader.py urls.txt
-
-# Specify custom download directory
-python youtube_downloader.py urls.txt --download-directory ~/Music
-Files are saved to ./music directory by default.
-```
 
 ## 📄 License
 
