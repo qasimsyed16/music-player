@@ -1,7 +1,10 @@
 # Python dependencies for Universal Music Player
 # Core audio metadata library
 mutagen>=1.45.0
-
+# YouTube import helper dependencies
+yt-dlp>=2024.03.10
+colorama>=0.4.6
+tqdm>=4.65.0
 # Optional: For better audio format support
 # eyed3>=0.9.6  # For additional MP3 tag support
 # pydub>=0.25.0  # For audio processing (requires ffmpeg)
