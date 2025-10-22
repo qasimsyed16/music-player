@@ -8,7 +8,7 @@ A modern, cross-platform web-based music player that works on **all platforms** 
 
 ## 🎬 Quick Demo
 
-1. **Clone & Run**: `git clone https://github.com/qasimsyed16/music-player.git && cd music-player && python3 server.py`
+1. **Clone & Run**: `git clone https://github.com/qasimsyed16/music-player.git && cd music-player && python3 music-player.py`
 2. **Open Browser**: http://localhost:8000
 3. **Add Music**: Drop files in `./music` folder
 4. **Enjoy**: Full-featured music player with playlists, themes, and PWA support!
@@ -61,7 +61,7 @@ pip3 install -r requirements.txt
 
 ### 3. Run the Server
 ```bash
-python3 server.py
+python3 music-player.py
 ```
 
 ### 4. Open in Browser
@@ -86,7 +86,7 @@ Would you like to create this directory? (y/n): y
 
 💡 You can now:
    • Move your music files to: ./music
-   • Or use a custom directory: python server.py --music-directory /path/to/your/music
+   • Or use a custom directory: python music-player.py --music-directory /path/to/your/music
 ```
 
 ### Adding Music
@@ -98,16 +98,16 @@ Would you like to create this directory? (y/n): y
 
 ```bash
 # Custom music directory
-python3 server.py --music-directory ~/Music
+python3 music-player.py --music-directory ~/Music
 
 # Custom host/port  
-python3 server.py --host 0.0.0.0 --port 3000
+python3 music-player.py --host 0.0.0.0 --port 3000
 
 # Environment variables
-HOST=0.0.0.0 PORT=3000 MUSIC_DIR="~/Music" python3 server.py
+HOST=0.0.0.0 PORT=3000 MUSIC_DIR="~/Music" python3 music-player.py
 
 # Help
-python3 server.py --help
+python3 music-player.py --help
 ```
 
 **Supported formats:** MP3, FLAC, M4A, OGG, WAV
